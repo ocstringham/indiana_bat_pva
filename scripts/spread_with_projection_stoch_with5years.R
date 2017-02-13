@@ -1,11 +1,11 @@
 
 rm(list = ls())
 
-## define emperical pop trends
+## define emperical population trends
 pop_emp = c(409, (409+448)/2, 448, (448+111)/2, 111)
 
 
-#### Get all lambda total values using survival data ####
+#### Get all lambda total values using emeprical survival data ####
 
 #survivals
 #s0 = 0.85 ## assumed
@@ -16,13 +16,13 @@ s4 = 0.76
 s5 = 0.75
 
 ## function to calculate lamdas
-
 lambda_fun = function(survival){
   
   s = survival
 
   mat = matrix(0, nrow = 2, ncol = 2)
 
+  #data borrow from little brown bat
   mat[1,1] = 0.47 * s * 0.38 * 1
   mat[1,2] = s * 0.85 * 1
   mat[2,1] = 0.47 * s
@@ -34,12 +34,14 @@ lambda_fun = function(survival){
   return(lambda)
 }
 
+#Get lambda for each year
 lam1 = lambda_fun(s1)
 lam2 = lambda_fun(s2)
 lam3 = lambda_fun(s3)
 lam4 = lambda_fun(s4)
 lam5 = lambda_fun(s5)
 
+#Create function to calculate lambda of infected subpopulation
 lam_e_fun = function(nt2, nu1, ne1, lam_u){
   
   #nu1 = nt1 - ne1
@@ -52,15 +54,15 @@ lam_e_fun = function(nt2, nu1, ne1, lam_u){
 }
 
 
-#### init pop size
+## init pop size define, assume 10% of population is initially infected
 init_total = pop_emp[1]
 init_affected = round(init_total * 0.10)
 init_unaffected = round(init_total - init_affected)
 
+#calulate infected lambda
 lam_e = lam_e_fun(pop_emp[2], init_unaffected, init_affected, lam1)
 
-
-
+#assume uninfected lambda is the 1st year lambda
 lam_u = lam1
 
 
@@ -97,6 +99,7 @@ colnames(pop_trend)[2] = "total_pop"
 colnames(pop_trend)[3] = "unaffected_pop"
 colnames(pop_trend)[4] = "affected_pop"
 
+#test plot
 matplot(pop_trend[,2:4], type = "l")
 
 
