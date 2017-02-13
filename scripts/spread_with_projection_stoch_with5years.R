@@ -88,7 +88,7 @@ pop_year3 = pop_split_fun(pop_year2[1], pop_emp[3], lam2, lam3, lam_u, lam_e)
 pop_year4 = pop_split_fun(pop_year3[1], pop_emp[4], lam3, lam4, lam_u, lam_e)
 pop_year5 = pop_split_fun(pop_year4[1], pop_emp[5], lam4, lam5, lam_u, lam_e)
 
-## for ggplot compile into df
+## (for ggplot) compile into df
 years = c(1,2,3,4,5)
 
 pop_trend = rbind.data.frame(pop_year1, pop_year2, pop_year3, pop_year4, pop_year5)
@@ -196,7 +196,7 @@ stoch = 0.10
 # }
 # hist(lambda_not_infected)
 
-### for lambda infected use normal of lam_e with 0.05 sigma, cut off at 0
+### for lambda infected use normal of lam_e, cut off at 0
 lambda_infected = rnorm(iterations, lam_e, sd = stoch*lam_e)
 for(i in 1:iterations){
   if(lambda_infected[i] < 0){
@@ -205,7 +205,7 @@ for(i in 1:iterations){
 }
 hist(lambda_infected)
 
-### try to do stochasticty on lambda for not infected
+### stochasticty on lambda for not infected
 lambda_not_infected = rnorm(iterations, lam_u, sd = stoch*lam_u)
 for(i in 1:iterations){
   if(lambda_not_infected[i] < 0){
@@ -216,7 +216,7 @@ hist(lambda_not_infected)
 
 #### project into future #### 
 
-#quick funcion to check if less than 0  make zero
+#quick funcion to check if less then 0  make zero
 lt_zero = function(x){
   if(x < 0){
     x=0
@@ -227,6 +227,7 @@ lt_zero = function(x){
 }
 
 
+#define number of years to project into future
 year = 10
 
 # define inits
@@ -388,7 +389,7 @@ ggsave(tempname, plot = p, device = NULL, path = NULL,
 
 #---------------------------------------------------------------------------------#
 
-#### get survival from labda ####
+#### back calcuate survival from labda ####
 ## I should put more info here bc when I go back to do it later I have no idea what's happening
 #http://www.math.harvard.edu/archive/21b_fall_04/exhibits/2dmatrices/
 # need to know way to hand calculated eigenvalues to back calculate matrix elements?
