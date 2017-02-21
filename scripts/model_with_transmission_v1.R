@@ -213,7 +213,8 @@ lt_zero = function(x){
 
 
 #define number of years to project into future
-year = 5 + 20
+years_in_future = 20
+year = 5 + years_in_future
 
 # define inits
 pop_vec = array(0, dim=c(year,3, iterations))
@@ -352,8 +353,8 @@ p = ggplot() +
          axis.text.x = element_text(angle = 45, hjust = 1)
          ) +
       
-      scale_x_continuous("Year", breaks = 1:10, 
-                         labels = 2011:2020) +
+      scale_x_continuous("Year", breaks = 1:26, 
+                         labels = 2011:2036) +
       scale_y_continuous("Population size",
                      expand = c(0, 0), 
                      limits = c(0,475), 
@@ -370,6 +371,148 @@ tempname = "spread_with_projection_2015data.pdf"
 ggsave(tempname, plot = p, device = NULL, path = NULL,
        scale = 1, width = NA, height = NA,
        units = c("cm"), dpi = 300)
+
+#---------------------------------------------------------------------------------#
+
+#### calculations to figure out how much to increase S of F to get lambnda > 1 ####
+
+## function to calculate lamdas
+lambda_fun2 = function(sj, sad){
+  
+  mat = matrix(0, nrow = 2, ncol = 2)
+  
+  #data borrow from little brown bat
+  mat[1,1] = 0.47 * sj * 0.38 * 1
+  mat[1,2] = sad * 0.85 * 1
+  mat[2,1] = 0.47 * sj
+  mat[2,2] = sad
+  
+  mat_eigen = eigen(mat)
+  lambda = mat_eigen$values[1]
+  
+  return(lambda)
+}
+
+
+## scenario 1: incr only adult s
+
+#inits
+d =1
+f=1
+ind = vector()
+lambda = vector()
+ad_incrs = seq(0.56, 1.0, by = 0.01)
+
+#loop
+for(i in ad_incrs)
+{
+  lambda[d] = lambda_fun2(0.56, i)
+  
+  #save index that's first to go over 1
+  if(lambda[d] > 1){
+    ind[f] = i
+    f=f+1
+  }
+  
+  d=d+1
+}
+
+ad_mgmt = cbind(ad_incrs, lambda)
+
+goal_1 = ind[1]  
+goal_1
+
+incr_to_goal_1 = goal_1 - 0.56
+incr_to_goal_1
+
+perc_incr_to_goal_1 = (goal_1 - 0.56) / goal_1  
+perc_incr_to_goal_1
+
+
+## scenario 2: incr adult and juv S
+
+#inits
+d =1
+f=1
+ind = vector()
+lambda = vector()
+ad_incrs = seq(0.56, 1.0, by = 0.01)
+
+#loop
+for(i in ad_incrs)
+{
+  lambda[d] = lambda_fun2(i, i)
+  
+  #save index that's first to go over 1
+  if(lambda[d] > 1){
+    ind[f] = i
+    f=f+1
+  }
+  
+  d=d+1
+}
+
+ad_mgmt = cbind(ad_incrs, lambda)
+
+goal_2 = ind[1]  
+goal_2
+
+incr_to_goal_2 = goal_2 - 0.56
+incr_to_goal_2
+
+perc_incr_to_goal_2 = (goal_2 - 0.56) / goal_2 
+perc_incr_to_goal_2
+
+
+## scenario3: increase F of all bats
+
+lambda_fun3 = function(s, f_incr){
+  
+  mat = matrix(0, nrow = 2, ncol = 2)
+  
+  #data borrow from little brown bat
+  mat[1,1] = 0.47 * s * 0.38 * 1 *(1+f_incr)
+  mat[1,2] = s * 0.85 * 1 *(1+f_incr)
+  mat[2,1] = 0.47 * s
+  mat[2,2] = s
+  
+  mat_eigen = eigen(mat)
+  lambda = mat_eigen$values[1]
+  
+  return(lambda)
+}
+
+#inits
+d =1
+f=1
+ind = vector()
+lambda = vector()
+f_incrs = seq(0.01, 1.0, by = 0.01)
+
+#loop
+for(i in 1:length(f_incrs))
+{
+  lambda[d] = lambda_fun2(0.56, i)
+  
+  #save index that's first to go over 1
+  if(lambda[d] > 1){
+    ind[f] = i
+    f=f+1
+  }
+  
+  d=d+1
+}
+
+ad_mgmt = cbind(ad_incrs, lambda)
+
+goal_3 = ind[1]  
+goal_3
+
+incr_to_goal_3 = goal_3 - 0.56
+incr_to_goal_3
+
+perc_incr_to_goal_3 = (goal_3 - 0.56) / goal_3 
+perc_incr_to_goal_3
 
 
 #---------------------------------------------------------------------------------#
