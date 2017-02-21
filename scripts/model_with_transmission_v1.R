@@ -8,9 +8,10 @@ library(dplyr)
 pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
 lam_observed = pop_emp[2:5]/pop_emp[1:4]
 #             
-# ##for all of NE Indiana bat
-# pop_emp =  round(c(16124, (16124+18273)/2, 18273, (18273+15722222222228)/2, 15728)/2)
-# lam_observed = pop_emp2[2:5]/pop_emp[1:4]
+##for all of NE Indiana bat
+t1 = 16124;t3 = 18273;t5 = 15728
+pop_emp2 =  round(c(t1, mean(t1,t3), t3, mean(t3, t5), t5))
+lam_observed2 = pop_emp2[2:5]/pop_emp2[1:4]
 
 #### Get all lambda total values using emeprical survival data ####
 
@@ -55,7 +56,7 @@ lambda = c(lam1, lam2, lam3, lam4, lam5)
 ### assume uninfected lambda is the 1st year lambda and infected = 0.4
 lam_u = lam1
 
-lam_e = 0.4
+lam_e = lam_observed2[4]
 
 #### get % contrb to lambda AKA percent infected
 p_i_contrib = function(lamt, lamu, lami){
@@ -71,7 +72,8 @@ p_ni4 = p_i_contrib(lam4,lam_u, lam_e)
 p_ni5 = p_i_contrib(lam5,lam_u, lam_e)
 
 p_ni = c(p_ni1, p_ni2, p_ni3, p_ni4, p_ni5)
-
+# % uninfected
+p_nu = 1 - p_ni
 
 #### project pop using survival lambdas 
 
@@ -90,10 +92,10 @@ trans = function(nut, lamu, nut1){
   return(round(x))
 }
 
-t1 = trans(pop_from_s[1], lam_u, pop_from_s[2])
-t2 = trans(pop_from_s[2], lam_u, pop_from_s[3])
-t3 = trans(pop_from_s[3], lam_u, pop_from_s[4])
-t4 = trans(pop_from_s[4], lam_u, pop_from_s[5])
+t1 = trans(pop_from_s[1]*p_nu[1], lam_u, pop_from_s[2]*p_nu[2])
+t2 = trans(pop_from_s[2]*p_nu[2], lam_u, pop_from_s[3]*p_nu[3])
+t3 = trans(pop_from_s[3]*p_nu[3], lam_u, pop_from_s[4]*p_nu[4])
+t4 = trans(pop_from_s[4]*p_nu[4], lam_u, pop_from_s[5]*p_nu[5])
 
 transferred = c(t1,t2,t3,t4)
 
@@ -150,21 +152,23 @@ matplot(pop_trend[,2:4], type = "l")
 
 #### regression: fit curve to data to act as transmission ####
 
-# % uninfected
-p_nu = 1 - p_ni
 
-p_nu_transferred = p_nu[2:5]/pop_from_s[2:5]
+## do regression with individuals not percent
+num_transmitted = transferred
+num_ni = pop_from_s[2:5] * p_ni[2:5]
 
-linear.model = lm(p_nu_transferred ~ p_nu[2:5])
+linear.model = lm(num_transmitted ~ num_ni)
 summary(linear.model)
 
-coeffs = as.numeric(linear.model$coefficients) *100
+coeffs = as.numeric(linear.model$coefficients)
 coeffs
 
-plot(p_nu[2:5], p_nu_transferred)
+plot(num_transmitted ~ num_ni)
+
+
 
 ## fit number of not-infected invids that become infected vs. number of infected
-## no. of uninfected transmitted to infected = (slope * no. of unifected) + y-intercept
+## no. of uninfected transmitted to infected = (slope * no. of infected) + y-intercept
 
 
 
@@ -209,7 +213,7 @@ lt_zero = function(x){
 
 
 #define number of years to project into future
-year = 10
+year = 5 + 20
 
 # define inits
 pop_vec = array(0, dim=c(year,3, iterations))
@@ -237,7 +241,7 @@ for(i in 1:iterations){
     if(pop_vec[t,1,i] > 0){
       
       # # apply linear regression to get the number of uninfected that become infected
-      num_trans[t,i] = (coeffs[2]*pop_vec[t,1,i] + coeffs[1]) # - pop_vec[t,2,i] #don't subtract bc i normalized for this already in the lm
+      num_trans[t,i] = (coeffs[2]*pop_vec[t,2,i] + coeffs[1]) # - pop_vec[t,2,i] #don't subtract bc i normalized for this already in the lm
       
       
       # if number infected greater than actual num, set to actual num
