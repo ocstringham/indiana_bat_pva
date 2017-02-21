@@ -49,6 +49,8 @@ lam3 = lambda_fun(s3)
 lam4 = lambda_fun(s4)
 lam5 = lambda_fun(s5)
 
+lambda_fun(.641)
+
 lambda = c(lam1, lam2, lam3, lam4, lam5)
 
 
@@ -354,11 +356,11 @@ p = ggplot() +
          ) +
       
       scale_x_continuous("Year", breaks = 1:26, 
-                         labels = 2011:2036) +
+                         labels = ggplot2:::interleave(seq(2011,2036,by=2), "") ) +
       scale_y_continuous("Population size",
                      expand = c(0, 0), 
-                     limits = c(0,475), 
-                     breaks = seq(0, 400, 100))
+                     limits = c(0,350), 
+                     breaks = seq(0, 350, 50))
                    
 X11()
 print(p)
@@ -367,7 +369,7 @@ print(p)
 #### save plot ####
 
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat/figs/")
-tempname = "spread_with_projection_2015data.pdf"
+tempname = "indiana_bat_pop_trend_v1.pdf"
 ggsave(tempname, plot = p, device = NULL, path = NULL,
        scale = 1, width = NA, height = NA,
        units = c("cm"), dpi = 300)
@@ -401,12 +403,12 @@ d =1
 f=1
 ind = vector()
 lambda = vector()
-ad_incrs = seq(0.56, 1.0, by = 0.01)
+ad_incrs = seq(0.64, 1.0, by = 0.01)
 
 #loop
 for(i in ad_incrs)
 {
-  lambda[d] = lambda_fun2(0.56, i)
+  lambda[d] = lambda_fun2(0.64, i)
   
   #save index that's first to go over 1
   if(lambda[d] > 1){
@@ -417,15 +419,16 @@ for(i in ad_incrs)
   d=d+1
 }
 
-ad_mgmt = cbind(ad_incrs, lambda)
+ad_mgmt = cbind.data.frame(ad_incrs, lambda)
 
 goal_1 = ind[1]  
 goal_1
 
-incr_to_goal_1 = goal_1 - 0.56
+s_ad_original = 0.64
+incr_to_goal_1 = goal_1 - s_ad_original
 incr_to_goal_1
 
-perc_incr_to_goal_1 = (goal_1 - 0.56) / goal_1  
+perc_incr_to_goal_1 = (goal_1 - 0.64) / s_ad_original 
 perc_incr_to_goal_1
 
 
@@ -436,7 +439,7 @@ d =1
 f=1
 ind = vector()
 lambda = vector()
-ad_incrs = seq(0.56, 1.0, by = 0.01)
+ad_incrs = seq(0.64, 1.0, by = 0.01)
 
 #loop
 for(i in ad_incrs)
@@ -452,17 +455,17 @@ for(i in ad_incrs)
   d=d+1
 }
 
-ad_mgmt = cbind(ad_incrs, lambda)
+ad_j_mgmt = cbind(ad_incrs, lambda)
 
 goal_2 = ind[1]  
 goal_2
 
-incr_to_goal_2 = goal_2 - 0.56
+s_ad_original = 0.64
+incr_to_goal_2 = goal_2 - s_ad_original
 incr_to_goal_2
 
-perc_incr_to_goal_2 = (goal_2 - 0.56) / goal_2 
+perc_incr_to_goal_2 = (goal_2 - 0.64) / s_ad_original 
 perc_incr_to_goal_2
-
 
 ## scenario3: increase F of all bats
 
@@ -484,7 +487,6 @@ lambda_fun3 = function(s, f_incr){
 
 #inits
 d =1
-f=1
 ind = vector()
 lambda = vector()
 f_incrs = seq(0.01, 1.0, by = 0.01)
@@ -492,57 +494,57 @@ f_incrs = seq(0.01, 1.0, by = 0.01)
 #loop
 for(i in 1:length(f_incrs))
 {
-  lambda[d] = lambda_fun2(0.56, i)
+  lambda[i] = lambda_fun2(0.64, f_incrs[i])
   
   #save index that's first to go over 1
-  if(lambda[d] > 1){
-    ind[f] = i
-    f=f+1
+  if(lambda[i] > 1){
+    ind[d] = i
+    d=d+1
   }
   
-  d=d+1
 }
 
-ad_mgmt = cbind(ad_incrs, lambda)
+f_mgmt = cbind.data.frame(f_incrs, lambda)
 
-goal_3 = ind[1]  
+goal_3 = f_mgmt$f_incrs[ind[1]]  
 goal_3
 
-incr_to_goal_3 = goal_3 - 0.56
+f_ad_original = (0.47 * 0.64 * 0.38)
+incr_to_goal_3 = goal_3 - f_ad_original
 incr_to_goal_3
 
-perc_incr_to_goal_3 = (goal_3 - 0.56) / goal_3 
+perc_incr_to_goal_3 = (goal_3 - f_ad_original) / f_ad_original
 perc_incr_to_goal_3
 
 
 #---------------------------------------------------------------------------------#
 
-#### back calcuate survival from labda ####
-## I should put more info here bc when I go back to do it later I have no idea what's happening
-#http://www.math.harvard.edu/archive/21b_fall_04/exhibits/2dmatrices/
-# need to know way to hand calculated eigenvalues to back calculate matrix elements?
+#### back calcuate survival from lambda ####
+
+# use brute force method
+# use original lambda function
+
+#inits
+d =1
+ind = vector()
+lambda = vector()
+incr = seq(0, 1, by = 0.001)
+
+for(i in 1:length(incr))
+{
+
+    lambda[i] = lambda_fun(incr[i])
+    
+    #save index that's first to go over 1
+    if(lambda[i] > lam_e){
+      ind[d] = i
+      d=d+1
+    }
+}
+
+s_back_calc = cbind.data.frame(incr, lambda)
+s_back_calc$incr[ind[1]]
 
 
-# a,b,c,d are matrix elements, 1,1, ; 1,2 ; 2,1 ; 2,2
 
-#since they all have one 's' term treat them as equal and solve for 's' later
 
-s=1
-
-a = 0.47 * s * 0.38 * 1
-b = s * 0.85 * 1
-c = 0.47 * s
-d = s
-# a = 0.1786
-# b = 0.85
-# c = 0.47
-# d = 1
-
-T1 = a + d
-D1 = (a*d) - (b*c)
-
-L1 = (T1/2) + sqrt( (((T1^2)/2) - D1) )
-L2 = (T1/2) - sqrt( ((T1^2)/2) - D1 )
-
-s_L1 = lam_e/L1
-s_L2 = lam_e/L2
