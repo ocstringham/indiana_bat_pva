@@ -7,6 +7,7 @@ library(dplyr)
 ## define emperical population trends
 pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
             
+lam_observed = pop_emp[2:5]/pop_emp[1:4]
 
 #### Get all lambda total values using emeprical survival data ####
 
@@ -49,7 +50,6 @@ lam_e_fun = function(nt2, nu1, ne1, lam_u){
   
   #nu1 = nt1 - ne1
   
-  
   lambda_e = (nt2 - (nu1*lam_u)) / ne1
   
   return(lambda_e)
@@ -63,7 +63,12 @@ init_affected = round(init_total * 0.10)
 init_unaffected = round(init_total - init_affected)
 
 #calulate infected lambda
-lam_e = lam_e_fun(pop_emp[2], init_unaffected, init_affected, lam1)
+lam_e = lam_e_fun(init_total, init_unaffected, init_affected, lam1)
+# #lambda e calcs with other years
+# lam_e2 = lam_e_fun(200, 180, 20, lam2)
+# lam_e3 = lam_e_fun(200, 180, 20, lam3)
+# lam_e4 = lam_e_fun(200, 180, 20, lam4)
+# lam_e5 = lam_e_fun(200, 180, 20, lam5)
 
 #assume uninfected lambda is the 1st year lambda
 lam_u = lam1
@@ -71,25 +76,26 @@ lam_u = lam1
 
 ####  2 pop categories - define function ####
 
-pop_split_fun = function(nt_time1, nt_time2, lambda_time1, lambda_time2, lambda_u, lambda_e){
-  
+pop_split_fun = function(nt_time1, nt_time2, lambda_u, lambda_e){
+
   #nt_time2 = lambda_time1* nt_time1
-  nu2 = ((nt_time2*lambda_time2) - (nt_time2*lambda_e )) / (lambda_u - lambda_e)
+  # nu2 = ((nt_time2*lambda_time2) - (nt_time2*lambda_e )) / (lambda_u - lambda_e)
+  nu2 = ( (nt_time2 - (nt_time1*lambda_u)) / (lambda_u + lambda_e) )* (-1)
   ne2 = nt_time2 - nu2
-  
+
   # give vector of year 2: total pop, unaffected pop, affected pop
   pop = c(nt_time2, nu2, ne2)
   pop = round(pop)
-  
+
   return(pop)
 }
 
 # run function for each year
 pop_year1 = c(init_total, init_unaffected, init_affected)
-pop_year2 = pop_split_fun(pop_year1[1], pop_emp[2], lam1, lam2, lam_u, lam_e)
-pop_year3 = pop_split_fun(pop_year2[1], pop_emp[3], lam2, lam3, lam_u, lam_e)
-pop_year4 = pop_split_fun(pop_year3[1], pop_emp[4], lam3, lam4, lam_u, lam_e)
-pop_year5 = pop_split_fun(pop_year4[1], pop_emp[5], lam4, lam5, lam_u, lam_e)
+pop_year2 = pop_split_fun(pop_year1[1], pop_emp[2], lam_u, lam_e)
+pop_year3 = pop_split_fun(pop_year2[1], pop_emp[3], lam_u, lam_e)
+pop_year4 = pop_split_fun(pop_year3[1], pop_emp[4], lam_u, lam_e)
+pop_year5 = pop_split_fun(pop_year4[1], pop_emp[5], lam_u, lam_e)
 
 ## (for ggplot) compile into df
 years = c(1,2,3,4,5)
@@ -106,10 +112,7 @@ colnames(pop_trend)[4] = "affected_pop"
 matplot(pop_trend[,2:4], type = "l")
 
 
-# #lambda e calcs with other years
-# lam_e2 = lam_e_fun(nt2 = pop_year3[1], nu1 = pop_year2[2], ne1 = pop_year2[3], lam_u = lam_u)
-# lam_e3 = lam_e_fun(nt2 = pop_year4[1], nu1 = pop_year3[2], ne1 = pop_year3[3], lam_u = lam_u)
-# lam_e4 = lam_e_fun(nt2 = pop_year5[1], nu1 = pop_year4[2], ne1 = pop_year4[3], lam_u = lam_u)
+
 
 
 
@@ -379,10 +382,16 @@ ggsave(tempname, plot = p, device = NULL, path = NULL,
 
 #since they all have one 's' term treat them as equal and solve for 's' later
 
-a = 0.1786
-b = 0.85
-c = 0.47
-d = 1
+s=1
+
+a = 0.47 * s * 0.38 * 1
+b = s * 0.85 * 1
+c = 0.47 * s
+d = s
+# a = 0.1786
+# b = 0.85
+# c = 0.47
+# d = 1
 
 T1 = a + d
 D1 = (a*d) - (b*c)
