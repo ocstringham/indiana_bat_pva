@@ -1,19 +1,22 @@
 
 rm(list = ls())
 
-## define emperical population trends
-pop_emp = c(409, (409+448)/2, 448, (448+111)/2, 111)
+library(dplyr)
 
+
+## define emperical population trends
+pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
+            
 
 #### Get all lambda total values using emeprical survival data ####
 
 #survivals
 #s0 = 0.85 ## assumed
-s1 = 0.79
-s2 = 0.78
-s3 = 0.77
-s4 = 0.76
-s5 = 0.75
+s1 = 0.78
+s2 = 0.77
+s3 = 0.76
+s4 = 0.75
+s5 = 0.74
 
 ## function to calculate lamdas
 lambda_fun = function(survival){
@@ -109,57 +112,34 @@ matplot(pop_trend[,2:4], type = "l")
 # lam_e4 = lam_e_fun(nt2 = pop_year5[1], nu1 = pop_year4[2], ne1 = pop_year4[3], lam_u = lam_u)
 
 
-# #### get transmission rate from pop trend ####
-# 
-# #define function to get it for each year of data
-# beta_fun = function(nu1, ne1, ne2, lambda_e){
-# 
-#   #beta = - ( (nu2 - (nu1*lambda_u)) / nu1)
-# 
-#   beta = ( (ne2 - (ne1*lambda_e)) / nu1)
-#   return(beta)
-# }
-# 
-# b1 = beta_fun(pop_trend$unaffected_pop[1],
-#               pop_trend$affected_pop[1],
-#               pop_trend$affected_pop[2],
-#               lam_e)
-# b2 = beta_fun(pop_trend$unaffected_pop[2],
-#               pop_trend$affected_pop[2],
-#               pop_trend$affected_pop[3],
-#               lam_e)
-# b3 = beta_fun(pop_trend$unaffected_pop[3],
-#               pop_trend$affected_pop[3],
-#               pop_trend$affected_pop[4],
-#               lam_e)
-# 
-# b = c(b1,b2,b3)
-
 
 #### regression: fit curve to data to act as transmission ####
 
 ## fit number of not-infected invids that become infected vs. number of infected
 
 no_trans = pop_trend$unaffected_pop[1:4]*lam_u - pop_trend$unaffected_pop[2:5] 
-pu = pop_trend$affected_pop[2:5]
+pi = pop_trend$affected_pop[2:5]
 
-plot(pu , no_trans)
+plot(pi , no_trans)
 
-## for fitting functional repsonse (non linear)
-# library(frair)
-# fr_dat = cbind.data.frame(pu , no_trans)
-# colnames(fr_dat)[1] = "x"
-# colnames(fr_dat)[2] = "y"
+
+# pu1 = pop_trend$unaffected_pop[3:5]
+# pi1 = pop_trend$affected_pop[3:5]
 # 
-# 
-# frair_fit( x ~ y, data=fr_dat, response='hollingsII',
-# start=list(a=1, h=0.5), fixed=list(T=1))
+# plot(pu1 , pi1)
+
+
+
   
 ## linear fit
 #linear.model = lm(pop_trend$affected_pop[2:5] ~ pop_trend$unaffected_pop[2:5])
-linear.model = lm(pu ~ no_trans)
-
+linear.model = lm(pi ~ no_trans)
 summary(linear.model)
+
+
+# linear.model2 = lm(pu1 ~ pi1)
+# summary(linear.model2)
+
 #plot(linear.model)
 coeffs = as.numeric(linear.model$coefficients)
 coeffs
