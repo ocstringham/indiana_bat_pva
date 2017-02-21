@@ -5,8 +5,8 @@ library(dplyr)
 
 
 # ## define emperical population trends
-# pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
-# lam_observed = pop_emp[2:5]/pop_emp[1:4]
+pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
+lam_observed = pop_emp[2:5]/pop_emp[1:4]
 #             
 # ##for all of NE Indiana bat
 # pop_emp =  round(c(16124, (16124+18273)/2, 18273, (18273+15722222222228)/2, 15728)/2)
@@ -51,29 +51,6 @@ lam5 = lambda_fun(s5)
 lambda = c(lam1, lam2, lam3, lam4, lam5)
 
 
-# #Create function to calculate lambda of infected subpopulation
-# lam_e_fun = function(nt2, nu1, ne1, lam_u){
-#   
-#   #nu1 = nt1 - ne1
-#   
-#   lambda_e = (nt2 - (nu1*lam_u)) / ne1
-#   
-#   return(lambda_e)
-#   
-# }
-# 
-# 
-# ## init pop size define, assume 10% of population is initially infected
-# init_affected = round(pop_emp[1] * 0.1)
-# init_unaffected = round(pop_emp[1] - init_affected)
-# 
-# #calulate infected lambda
-# lam_e = lam_e_fun(pop_emp[2], init_unaffected, init_affected, lam1)
-# #lambda e calcs with other years
-# lam_e2 = lam_e_fun(200, 180, 20, lam2)
-# lam_e3 = lam_e_fun(200, 180, 20, lam3)
-# lam_e4 = lam_e_fun(200, 180, 20, lam4)
-# lam_e5 = lam_e_fun(200, 180, 20, lam5)
 
 ### assume uninfected lambda is the 1st year lambda and infected = 0.4
 lam_u = lam1
@@ -87,11 +64,11 @@ p_i_contrib = function(lamt, lamu, lami){
 }
 
 # % infected
-p_ni1 = p_i_contrib(lam1,lam_u, 0.4)
-p_ni2 = p_i_contrib(lam2,lam_u, 0.4)
-p_ni3 = p_i_contrib(lam3,lam_u, 0.4)
-p_ni4 = p_i_contrib(lam4,lam_u, 0.4)
-p_ni5 = p_i_contrib(lam5,lam_u, 0.4)
+p_ni1 = p_i_contrib(lam1,lam_u, lam_e)
+p_ni2 = p_i_contrib(lam2,lam_u, lam_e)
+p_ni3 = p_i_contrib(lam3,lam_u, lam_e)
+p_ni4 = p_i_contrib(lam4,lam_u, lam_e)
+p_ni5 = p_i_contrib(lam5,lam_u, lam_e)
 
 p_ni = c(p_ni1, p_ni2, p_ni3, p_ni4, p_ni5)
 
@@ -99,11 +76,11 @@ p_ni = c(p_ni1, p_ni2, p_ni3, p_ni4, p_ni5)
 #### project pop using survival lambdas 
 
 pop_from_s = vector()
-pop_from_s[1] = 204
+pop_from_s[1] = pop_emp[1]
 
 
-for(i in 2:5){
-  pop_from_s[i] = round(pop_from_s[i-1]*lambda[i])
+for(i in 2:6){
+  pop_from_s[i] = round(pop_from_s[i-1]*lambda[i-1])
 }
 
 ## num transfered
@@ -146,7 +123,7 @@ project_and_transmit = function(n_uninf_t0, n_inf_t0, lambda_u, lambda_i, transm
   
 }
 
-pop = project_and_transmit(206, 0, lam_u, lam_e, transferred)
+pop = project_and_transmit(pop_from_s[1], 0, lam_u, lam_e, transferred)
 
 total_pop = pop[,1] +pop[,2]
 
