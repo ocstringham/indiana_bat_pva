@@ -384,7 +384,7 @@ p = bat_plot(600)
 #### save plot ####
 
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat/figs/")
-tempname = "indiana_bat_pop_trend_v2.pdf"
+tempname = "indiana_bat_pop_trend_v3.pdf"
 ggsave(tempname, plot = p, device = NULL, path = NULL,
        scale = 1, width = NA, height = NA,
        units = c("cm"), dpi = 300)
