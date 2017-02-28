@@ -391,7 +391,22 @@ ggsave(tempname, plot = p, device = NULL, path = NULL,
 
 #---------------------------------------------------------------------------------#
 
+#### get trend data in csv for Brooke ####
 
+#combind pop trend with pop median
+ptemp1 = pop_median[,c(4,3,1,2)]
+
+ptemp2 = pop_trend[1:3,]
+
+ptemp3 = rbind.data.frame(ptemp2, ptemp1)
+
+ptemp3$prop_affected = ptemp3$affected_pop/ptemp3$total_pop
+
+setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat")
+write.csv(ptemp3, file = "indiana_bat_pop_trend_with_transmission.csv")
+
+
+#---------------------------------------------------------------------------------#
 #### back calcuate survival from lambda ####
 
 # use brute force method
