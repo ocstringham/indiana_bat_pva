@@ -5,7 +5,7 @@ library(dplyr)
 
 
 # ## define emperical population trends
-pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)/2) #divide by 2 for females
+pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)) # dont divide by 2 for females
 lam_observed = pop_emp[2:5]/pop_emp[1:4]
 #             
 ##for all of NE Indiana bat
@@ -49,8 +49,6 @@ lam3 = lambda_fun(s3)
 lam4 = lambda_fun(s4)
 lam5 = lambda_fun(s5)
 
-lambda_fun(.641)
-
 lambda = c(lam1, lam2, lam3, lam4, lam5)
 
 
@@ -58,7 +56,20 @@ lambda = c(lam1, lam2, lam3, lam4, lam5)
 ### assume uninfected lambda is the 1st year lambda and infected = 0.4
 lam_u = lam1
 
-lam_e = lam_observed2[4]
+# lam_e = lam_observed2[4]
+
+#alt lambda_e calc
+lambda_e_fun = function(lam2, lamu, p){
+  
+  (lam2 - ((1-p)*lamu) ) / p
+  
+}
+
+# calculate lambda e with initial infected % assumed
+lam_e = lambda_e_fun(lam2, lam_u, 0.10)
+lam_e
+
+
 
 #### get % contrb to lambda AKA percent infected
 p_i_contrib = function(lamt, lamu, lami){
@@ -321,7 +332,8 @@ pop1 = melt(pop_trend[,-2], id.vars = "year")
 pop2 = melt(pop_median[,-3], id.vars = "year")
 pop3 = rbind.data.frame(pop_trend[,1:2],pop_median[,3:4])
 
-
+bat_plot = function(y_max)
+{
 p = ggplot() +
   
       geom_line(data = pop3, aes(x=year, y=total_pop, colour = " total_pop")) +
@@ -359,24 +371,67 @@ p = ggplot() +
                          labels = ggplot2:::interleave(seq(2011,2036,by=2), "") ) +
       scale_y_continuous("Population size",
                      expand = c(0, 0), 
-                     limits = c(0,350), 
-                     breaks = seq(0, 350, 50))
+                     limits = c(0,y_max), 
+                     breaks = seq(0, y_max, 100))
                    
 X11()
 print(p)
+return(p)
+}
 
+p = bat_plot(600)
 
 #### save plot ####
 
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat/figs/")
-tempname = "indiana_bat_pop_trend_v1.pdf"
+tempname = "indiana_bat_pop_trend_v2.pdf"
 ggsave(tempname, plot = p, device = NULL, path = NULL,
        scale = 1, width = NA, height = NA,
        units = c("cm"), dpi = 300)
 
 #---------------------------------------------------------------------------------#
 
-#### calculations to figure out how much to increase S of F to get lambnda > 1 ####
+
+#### back calcuate survival from lambda ####
+
+# use brute force method
+# use original lambda function
+
+# define function
+back_calculate_survival = function(lam_e)
+{
+  
+  #inits  
+  d =1
+  ind = vector()
+  lambda = vector()
+  incr = seq(0, 1, by = 0.001)
+  
+  for(i in 1:length(incr))
+  {
+    
+    lambda[i] = lambda_fun(incr[i])
+    
+    #save index that's first to go over 1
+    if(lambda[i] > lam_e){
+      ind[d] = i
+      d=d+1
+    }
+  }
+  
+  s_back_calc = cbind.data.frame(incr, lambda)
+  s = s_back_calc$incr[ind[1]]
+  return(s)
+  
+}
+
+# get value
+survival_infecteds = back_calculate_survival(lam_e)
+
+#---------------------------------------------------------------------------------------#
+
+#### management calculations to figure out how much to increase S of F to get lambnda > 1 ####
+
 
 ## function to calculate lamdas
 lambda_fun2 = function(sj, sad){
@@ -403,12 +458,12 @@ d =1
 f=1
 ind = vector()
 lambda = vector()
-ad_incrs = seq(0.64, 1.0, by = 0.01)
+ad_incrs = seq(survival_infecteds, 1.0, by = 0.01)
 
 #loop
 for(i in ad_incrs)
 {
-  lambda[d] = lambda_fun2(0.64, i)
+  lambda[d] = lambda_fun2(survival_infecteds, i)
   
   #save index that's first to go over 1
   if(lambda[d] > 1){
@@ -424,11 +479,11 @@ ad_mgmt = cbind.data.frame(ad_incrs, lambda)
 goal_1 = ind[1]  
 goal_1
 
-s_ad_original = 0.64
+s_ad_original = survival_infecteds
 incr_to_goal_1 = goal_1 - s_ad_original
 incr_to_goal_1
 
-perc_incr_to_goal_1 = (goal_1 - 0.64) / s_ad_original 
+perc_incr_to_goal_1 = (goal_1 - survival_infecteds) / s_ad_original 
 perc_incr_to_goal_1
 
 
@@ -439,7 +494,7 @@ d =1
 f=1
 ind = vector()
 lambda = vector()
-ad_incrs = seq(0.64, 1.0, by = 0.01)
+ad_incrs = seq(survival_infecteds, 1.0, by = 0.01)
 
 #loop
 for(i in ad_incrs)
@@ -460,11 +515,11 @@ ad_j_mgmt = cbind(ad_incrs, lambda)
 goal_2 = ind[1]  
 goal_2
 
-s_ad_original = 0.64
+s_ad_original = survival_infecteds
 incr_to_goal_2 = goal_2 - s_ad_original
 incr_to_goal_2
 
-perc_incr_to_goal_2 = (goal_2 - 0.64) / s_ad_original 
+perc_incr_to_goal_2 = (goal_2 - survival_infecteds) / s_ad_original 
 perc_incr_to_goal_2
 
 ## scenario3: increase F of all bats
@@ -494,7 +549,7 @@ f_incrs = seq(0.01, 1.0, by = 0.01)
 #loop
 for(i in 1:length(f_incrs))
 {
-  lambda[i] = lambda_fun2(0.64, f_incrs[i])
+  lambda[i] = lambda_fun2(survival_infecteds, f_incrs[i])
   
   #save index that's first to go over 1
   if(lambda[i] > 1){
@@ -509,7 +564,7 @@ f_mgmt = cbind.data.frame(f_incrs, lambda)
 goal_3 = f_mgmt$f_incrs[ind[1]]  
 goal_3
 
-f_ad_original = (0.47 * 0.64 * 0.38)
+f_ad_original = (0.47 * survival_infecteds * 0.38)
 incr_to_goal_3 = goal_3 - f_ad_original
 incr_to_goal_3
 
@@ -518,33 +573,6 @@ perc_incr_to_goal_3
 
 
 #---------------------------------------------------------------------------------#
-
-#### back calcuate survival from lambda ####
-
-# use brute force method
-# use original lambda function
-
-#inits
-d =1
-ind = vector()
-lambda = vector()
-incr = seq(0, 1, by = 0.001)
-
-for(i in 1:length(incr))
-{
-
-    lambda[i] = lambda_fun(incr[i])
-    
-    #save index that's first to go over 1
-    if(lambda[i] > lam_e){
-      ind[d] = i
-      d=d+1
-    }
-}
-
-s_back_calc = cbind.data.frame(incr, lambda)
-s_back_calc$incr[ind[1]]
-
 
 
 
