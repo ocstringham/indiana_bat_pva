@@ -398,12 +398,22 @@ ptemp1 = pop_median[,c(4,3,1,2)]
 
 ptemp2 = pop_trend[1:3,]
 
+
 ptemp3 = rbind.data.frame(ptemp2, ptemp1)
 
+# % affected
 ptemp3$prop_affected = ptemp3$affected_pop/ptemp3$total_pop
 
+
+# combine with 20 and 80th percentiles
+ptemp3$unaffected_pop_20th = NA ; ptemp3$unaffected_pop_20th[6:25] = pop_20$unaffected_pop[3:22]
+ptemp3$unaffected_pop_80th = NA ; ptemp3$unaffected_pop_80th[6:25] = pop_80$unaffected_pop[3:22]
+ptemp3$affected_pop_20th = NA ; ptemp3$affected_pop_20th[6:25] = pop_20$affected_pop[3:22]
+ptemp3$affected_pop_80th = NA ; ptemp3$affected_pop_80th[6:25] = pop_80$affected_pop[3:22]
+
+
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat")
-write.csv(ptemp3, file = "indiana_bat_pop_trend_with_transmission.csv")
+write.csv(ptemp3, file = "indiana_bat_pop_trend_with_transmission_with_CI.csv")
 
 
 #---------------------------------------------------------------------------------#
