@@ -326,6 +326,11 @@ colnames(pop_quant_infected)[1] = "lower20" ; colnames(pop_quant_infected)[2] = 
 #### plot ####
 library(ggplot2)
 library(reshape2)
+library(extrafont)
+library(Cairo)
+
+# font_import()
+loadfonts(device = "win")
 
 #get into right data format
 pop1 = melt(pop_trend[,-2], id.vars = "year")
@@ -355,14 +360,16 @@ p = ggplot() +
               fill = "blue", alpha = 0.1)  +  
       
       theme(
+         text=element_text(family="Times New Roman"),
          legend.title=element_blank(),
          panel.background = element_rect(fill = "white", colour = "white"),
          panel.border = element_rect(colour = "black", fill=NA, size=0.5),
          panel.grid.major.y = element_blank(),
          panel.grid.minor.y = element_blank(),
          panel.grid.major.x = element_blank(),
-         legend.position = "none"
+         legend.position = "none",
          #axis.text.x = element_text(angle = 45, hjust = 1)
+         axis.title = element_text(size = 11, face = "bold")
          ) +
       
       scale_x_continuous("Year", breaks = seq(0,25,by=5),
@@ -383,9 +390,9 @@ p = bat_plot(600)
 #### save plot ####
 
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat/figs/")
-tempname = "indiana_bat_pop_trend_v4.pdf"
-ggsave(tempname, plot = p, device = NULL, path = NULL,
-       scale = 1, width = NA, height = NA,
+tempname = "indiana_bat_pop_trend_v5.pdf"
+ggsave(tempname, plot = p, device = cairo_pdf, path = NULL,
+       scale = 1, width = 10, height = 10,
        units = c("cm"), dpi = 300)
 
 #---------------------------------------------------------------------------------#
