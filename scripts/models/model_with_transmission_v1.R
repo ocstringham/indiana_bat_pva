@@ -332,8 +332,8 @@ pop1 = melt(pop_trend[,-2], id.vars = "year")
 pop2 = melt(pop_median[,-3], id.vars = "year")
 pop3 = rbind.data.frame(pop_trend[,1:2],pop_median[,3:4])
 
-bat_plot = function(y_max)
-{
+bat_plot = function(y_max){
+  
 p = ggplot() +
   
       geom_line(data = pop3, aes(x=year, y=total_pop, colour = " total_pop")) +
@@ -346,9 +346,7 @@ p = ggplot() +
                 linetype = "dashed") +
 
       
-      
-      
-      scale_colour_manual(labels = c("Total population", "Infected", "Not infected"),
+      scale_colour_manual(labels = c("Total population", "Infected", "Uninfected"),
                           values=c("black", "red", "blue")) +
   
       geom_ribbon(data = pop_quant_infected, aes(x = year, ymin = lower20, ymax = upper80),
@@ -360,15 +358,16 @@ p = ggplot() +
          legend.title=element_blank(),
          panel.background = element_rect(fill = "white", colour = "white"),
          panel.border = element_rect(colour = "black", fill=NA, size=0.5),
-         panel.grid.major.y = element_line(colour="#d9d9d9", size=0.25),
+         panel.grid.major.y = element_blank(),
          panel.grid.minor.y = element_blank(),
-         panel.grid.major.x = element_line(colour="#d9d9d9", size=0.25),
-         legend.position = c(0.8,0.8),
-         axis.text.x = element_text(angle = 45, hjust = 1)
+         panel.grid.major.x = element_blank(),
+         legend.position = "none"
+         #axis.text.x = element_text(angle = 45, hjust = 1)
          ) +
       
-      scale_x_continuous("Year", breaks = 1:26, 
-                         labels = ggplot2:::interleave(seq(2011,2036,by=2), "") ) +
+      scale_x_continuous("Year", breaks = seq(0,25,by=5),
+                         labels = seq(2010,2035,by=5)
+                        ) +
       scale_y_continuous("Population size",
                      expand = c(0, 0), 
                      limits = c(0,y_max), 
@@ -384,7 +383,7 @@ p = bat_plot(600)
 #### save plot ####
 
 setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat/figs/")
-tempname = "indiana_bat_pop_trend_v3.pdf"
+tempname = "indiana_bat_pop_trend_v4.pdf"
 ggsave(tempname, plot = p, device = NULL, path = NULL,
        scale = 1, width = NA, height = NA,
        units = c("cm"), dpi = 300)
