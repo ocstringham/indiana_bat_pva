@@ -4,24 +4,28 @@ rm(list = ls())
 library(dplyr)
 
 
-# ## define emperical population trends
+
+#########################################################
+#### setup for resgression and population projection ####
+#########################################################
+
+
+#### define emperical population trends ----
 pop_emp = round(c(409, (409+448)/2, 448, (448+111)/2, 111)) # dont divide by 2 for females
 lam_observed = pop_emp[2:5]/pop_emp[1:4]
-#             
-##for all of NE Indiana bat
-t1 = 16124;t3 = 18273;t5 = 15728
-pop_emp2 =  round(c(t1, mean(t1,t3), t3, mean(t3, t5), t5))
-lam_observed2 = pop_emp2[2:5]/pop_emp2[1:4]
 
-#### Get all lambda total values using emeprical survival data ####
 
-#survivals
+
+#### Get all lambda total values using emeprical survival data ----
+
+# survivals from MARK analysis
 #s0 = 0.85 ## assumed
 s1 = 0.78
 s2 = 0.77
 s3 = 0.76
 s4 = 0.75
 s5 = 0.74
+
 
 ## function to calculate lamdas
 lambda_fun = function(survival){
@@ -30,7 +34,7 @@ lambda_fun = function(survival){
 
   mat = matrix(0, nrow = 2, ncol = 2)
 
-  #data borrow from little brown bat
+  # borrow some data and structure from little brown bat  vital rate matrix
   mat[1,1] = 0.47 * s * 0.38 * 1
   mat[1,2] = s * 0.85 * 1
   mat[2,1] = 0.47 * s
@@ -42,23 +46,24 @@ lambda_fun = function(survival){
   return(lambda)
 }
 
-#Get lambda for each year
+## Get lambda for each year
 lam1 = lambda_fun(s1)
 lam2 = lambda_fun(s2)
 lam3 = lambda_fun(s3)
 lam4 = lambda_fun(s4)
 lam5 = lambda_fun(s5)
 
+# combine in a vec
 lambda = c(lam1, lam2, lam3, lam4, lam5)
 
 
 
-### assume uninfected lambda is the 1st year lambda and infected = 0.4
+## assume uninfected lambda is the 1st year lambda
 lam_u = lam1
 
-# lam_e = lam_observed2[4]
 
-#alt lambda_e calc
+
+## lambda_e calc
 lambda_e_fun = function(lam2, lamu, p){
   
   (lam2 - ((1-p)*lamu) ) / p
@@ -71,7 +76,8 @@ lam_e
 
 
 
-#### get % contrb to lambda AKA percent infected
+#### get % contrb to lambda AKA percent infected ----
+
 p_i_contrib = function(lamt, lamu, lami){
   x = (lamt - lamu)/(lami-lamu)
   return(x)
@@ -88,7 +94,9 @@ p_ni = c(p_ni1, p_ni2, p_ni3, p_ni4, p_ni5)
 # % uninfected
 p_nu = 1 - p_ni
 
-#### project pop using survival lambdas 
+
+
+#### project pop using survival lambdas ----
 
 pop_from_s = vector()
 pop_from_s[1] = pop_emp[1]
@@ -98,7 +106,7 @@ for(i in 2:6){
   pop_from_s[i] = round(pop_from_s[i-1]*lambda[i-1])
 }
 
-## num transfered
+## calculate num transfered
 trans = function(nut, lamu, nut1){
   
   x = nut*lamu - nut1
@@ -162,11 +170,13 @@ matplot(pop_trend[,2:4], type = "l")
 
 
 
-
+################################################################
 #### regression: fit curve to data to act as transmission ####
+################################################################
 
+## fit number of not-infected invids that become infected vs. number of infected
+## no. of uninfected transmitted to infected = (slope * no. of infected) + y-intercept
 
-## do regression with individuals not percent
 num_transmitted = transferred
 num_ni = pop_from_s[2:5] * p_ni[2:5]
 
@@ -180,9 +190,10 @@ plot(num_transmitted ~ num_ni)
 
 
 
-## fit number of not-infected invids that become infected vs. number of infected
-## no. of uninfected transmitted to infected = (slope * no. of infected) + y-intercept
 
+########################################
+#### project into future ############
+########################################
 
 
 #### stochasticity for both lambdas ####
@@ -194,7 +205,7 @@ iterations = 1000
 stoch = 0.10
 
 
-### for lambda infected use normal of lam_e, cut off at 0
+### use normal, cut off at 0
 lambda_infected = rnorm(iterations, lam_e, sd = stoch*lam_e)
 for(i in 1:iterations){
   if(lambda_infected[i] < 0){
@@ -212,9 +223,19 @@ for(i in 1:iterations){
 }
 hist(lambda_not_infected)
 
-#### project into future #### 
 
-#quick funcion to check if less then 0  make zero
+
+#define number of years to project into future
+years_in_future = 20
+year = 5 + years_in_future
+
+## define inits
+pop_vec = array(0, dim=c(year,3, iterations))
+pop_vec[1:5,1,] = pop_trend$unaffected_pop #not infected
+pop_vec[1:5,2,] = pop_trend$affected_pop #infected
+num_trans = array(0, dim = c(year,iterations))
+num_trans[1:4,] = transferred
+# funcion to check if less then 0  make zero
 lt_zero = function(x){
   if(x < 0){
     x=0
@@ -225,18 +246,7 @@ lt_zero = function(x){
 }
 
 
-#define number of years to project into future
-years_in_future = 20
-year = 5 + years_in_future
-
-# define inits
-pop_vec = array(0, dim=c(year,3, iterations))
-pop_vec[1:5,1,] = pop_trend$unaffected_pop #not infected
-pop_vec[1:5,2,] = pop_trend$affected_pop #infected
-num_trans = array(0, dim = c(year,iterations))
-num_trans[1:4,] = transferred
-
-# project and transmit
+### project and transmit
 for(i in 1:iterations){
   
   for(t in 6:year){
@@ -303,7 +313,7 @@ matplot(pop_median, type = "l")
 
 
 
-#for ggplot
+# compile data for ggplot
 pop_median = as.data.frame(pop_median[4:year,]); pop_median$year = 4:year
 pop_80 = as.data.frame(pop_80[4:year,]); pop_80$year = 4:year
 pop_20 = as.data.frame(pop_20[4:year,]); pop_20$year = 4:year
@@ -312,7 +322,7 @@ colnames(pop_median)[3] = "total_pop" ; colnames(pop_80)[3] = "total_pop" ; coln
 colnames(pop_median)[1] = "unaffected_pop"; colnames(pop_80)[1] = "unaffected_pop"; colnames(pop_20)[1] = "unaffected_pop"
 colnames(pop_median)[2] = "affected_pop"; colnames(pop_80)[2] = "affected_pop"; colnames(pop_20)[2] = "affected_pop"
 
-#for quantiles
+# quantiles
 pop_quant_uninfected = cbind.data.frame(pop_20$unaffected_pop, pop_80$unaffected_pop, 4:year)
 pop_quant_infected = cbind.data.frame(pop_20$affected_pop, pop_80$affected_pop, 4:year)
 
@@ -323,7 +333,12 @@ colnames(pop_quant_infected)[1] = "lower20" ; colnames(pop_quant_infected)[2] = 
 
 #-----------------------------------------------------------------------#
 
-#### plot ####
+
+####################################
+#### plot ############################
+########################################
+
+
 library(ggplot2)
 library(reshape2)
 library(extrafont)
@@ -395,9 +410,11 @@ ggsave(tempname, plot = p, device = cairo_pdf, path = NULL,
        scale = 1, width = 10, height = 10,
        units = c("cm"), dpi = 300)
 
+
+
 #---------------------------------------------------------------------------------#
 
-#### get trend data in csv for Brooke ####
+#### get trend data in csv for manuscript ####
 
 #combind pop trend with pop median
 ptemp1 = pop_median[,c(4,3,1,2)]
@@ -422,8 +439,13 @@ setwd("C:/Users/oliver/Google Drive/PhD/Research/Indiana bat")
 write.csv(ptemp3, file = "indiana_bat_pop_trend_with_transmission_with_CI.csv")
 
 
+
 #---------------------------------------------------------------------------------#
-#### back calcuate survival from lambda ####
+
+##########################################################
+#### back calcuate survival of infectids from lambda ####
+##########################################################
+
 
 # use brute force method
 # use original lambda function
@@ -459,7 +481,16 @@ back_calculate_survival = function(lam_e)
 # get value
 survival_infecteds = back_calculate_survival(lam_e)
 
+
 #---------------------------------------------------------------------------------------#
+
+
+##############################################
+##### Management scenarios ##################
+#############################################
+
+## THIS WAS SCRAPPED AND VRSA WAS USED INSTEAD !! ##
+
 
 #### management calculations to figure out how much to increase S of F to get lambnda > 1 ####
 
